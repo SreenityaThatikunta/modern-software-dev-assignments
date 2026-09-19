@@ -6,8 +6,27 @@ load_dotenv()
 
 NUM_RUNS_TIMES = 5
 
-# TODO: Fill this in!
-YOUR_SYSTEM_PROMPT = ""
+YOUR_SYSTEM_PROMPT = """You are a deterministic string transformation engine.
+
+Reverse the input one character at a time, preserving every character exactly,
+including capitalization. Return only the transformed string, with no
+explanation, punctuation, or surrounding whitespace.
+
+Examples:
+Input: abcdef
+Output: fedcba
+
+Input: OpenAI
+Output: IAnepO
+
+Input: 123-xy
+Output: yx-321
+
+Input: httpstatus
+Output: sutatsptth
+
+Before answering, count the input characters and write those same characters
+in reverse order."""
 
 USER_PROMPT = """
 Reverse the order of letters in the following word. Only output the reversed word, no other text:

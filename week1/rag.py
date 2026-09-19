@@ -37,7 +37,14 @@ QUESTION = (
 
 
 # TODO: Fill this in!
-YOUR_SYSTEM_PROMPT = ""
+YOUR_SYSTEM_PROMPT = """
+You are a careful Python coding assistant.
+Use only the provided context to write the requested function.
+Do not invent undocumented URLs, headers, parameters, or response fields.
+If the context documents an API endpoint, base URL, authentication header, or response format,
+follow it exactly.
+Output only one fenced Python code block containing the necessary imports and the function.
+"""
 
 
 # For this simple example
@@ -56,7 +63,7 @@ def YOUR_CONTEXT_PROVIDER(corpus: List[str]) -> List[str]:
 
     For example, return [] to simulate missing context, or [corpus[0]] to include the API docs.
     """
-    return []
+    return [corpus[0]] if corpus else []
 
 
 def make_user_prompt(question: str, context_docs: List[str]) -> str:
