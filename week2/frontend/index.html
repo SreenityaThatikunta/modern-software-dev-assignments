@@ -24,51 +24,96 @@
     <div class="row">
       <label class="row"><input id="save_note" type="checkbox" checked /> Save as note</label>
       <button id="extract">Extract</button>
+      <button id="extract-llm">Extract LLM</button>
+      <button id="list-notes">List Notes</button>
     </div>
 
     <div class="items" id="items"></div>
+    <div class="items" id="notes"></div>
 
     <script>
       const $ = (sel) => document.querySelector(sel);
       const itemsEl = $('#items');
-      const btn = $('#extract');
-      btn.addEventListener('click', async () => {
+      const notesEl = $('#notes');
+
+      function renderItems(items) {
+        itemsEl.replaceChildren();
+        if (!items.length) {
+          itemsEl.textContent = 'No action items found.';
+          itemsEl.className = 'items muted';
+          return;
+        }
+        itemsEl.className = 'items';
+        items.forEach((item) => {
+          const row = document.createElement('div');
+          row.className = 'item';
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.addEventListener('change', async () => {
+            await fetch(`/action-items/${item.id}/done`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ done: checkbox.checked }),
+            });
+          });
+          const label = document.createElement('span');
+          label.textContent = item.text;
+          row.append(checkbox, label);
+          itemsEl.append(row);
+        });
+      }
+
+      async function extractItems(endpoint, label) {
         const text = $('#text').value;
         const save = $('#save_note').checked;
-        itemsEl.textContent = 'Extracting...';
+        itemsEl.className = 'items';
+        itemsEl.textContent = `${label}...`;
         try {
-          const res = await fetch('/action-items/extract', {
+          const res = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ text, save_note: save }),
           });
-          if (!res.ok) throw new Error('Request failed');
+          if (!res.ok) throw new Error(await res.text());
           const data = await res.json();
-          if (!data.items || data.items.length === 0) {
-            itemsEl.innerHTML = '<p class="muted">No action items found.</p>';
+          renderItems(data.items || []);
+        } catch (err) {
+          console.error(err);
+          itemsEl.className = 'items muted';
+          itemsEl.textContent = `Error: ${err.message}`;
+        }
+      }
+
+      async function listNotes() {
+        notesEl.textContent = 'Loading notes...';
+        try {
+          const res = await fetch('/notes');
+          if (!res.ok) throw new Error(await res.text());
+          const notes = await res.json();
+          notesEl.replaceChildren();
+          if (!notes.length) {
+            notesEl.className = 'items muted';
+            notesEl.textContent = 'No saved notes.';
             return;
           }
-          itemsEl.innerHTML = data.items.map(it => (
-            `<div class="item"><input type="checkbox" data-id="${it.id}" /> <span>${it.text}</span></div>`
-          )).join('');
-          itemsEl.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-            cb.addEventListener('change', async (e) => {
-              const id = e.target.getAttribute('data-id');
-              await fetch(`/action-items/${id}/done`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ done: e.target.checked }),
-              });
-            });
+          notesEl.className = 'items';
+          notes.forEach((note) => {
+            const entry = document.createElement('div');
+            entry.className = 'item';
+            entry.textContent = `#${note.id}: ${note.content}`;
+            notesEl.append(entry);
           });
         } catch (err) {
           console.error(err);
-          itemsEl.textContent = 'Error extracting items';
+          notesEl.className = 'items muted';
+          notesEl.textContent = `Error: ${err.message}`;
         }
-      });
+      }
+
+      $('#extract').addEventListener('click', () => extractItems('/action-items/extract', 'Extracting'));
+      $('#extract-llm').addEventListener('click', () => extractItems('/action-items/extract/llm', 'Extracting with LLM'));
+      $('#list-notes').addEventListener('click', listNotes);
 
     </script>
   </body>
   </html>
-
-
