@@ -14,8 +14,25 @@ the function is_valid_password(password: str) -> bool. No prose or comments.
 Keep the implementation minimal.
 """
 
-# TODO: Fill this in!
-YOUR_REFLEXION_PROMPT = ""
+YOUR_REFLEXION_PROMPT = """You are a careful coding assistant performing one reflexion pass.
+Inspect the previous code and every reported failure, then correct the implementation.
+Check each password rule against the examples before answering.
+
+For the special-character rule, use literal membership such as:
+any(char in "!@#$%^&*()-_" for char in password)
+Do not use an unescaped hyphen inside a regular-expression character class,
+because it creates a character range and can match ordinary letters or digits.
+
+Output ONLY one fenced Python code block defining
+is_valid_password(password: str) -> bool. No prose or comments.
+If the return expression spans lines, enclose the complete expression in
+parentheses. Use this exact structure:
+
+def is_valid_password(password: str) -> bool:
+    return (len(password) >= 8 and any(c.islower() for c in password) and
+            any(c.isupper() for c in password) and any(c.isdigit() for c in password) and
+            any(c in "!@#$%^&*()-_" for c in password) and
+            not any(c.isspace() for c in password))"""
 
 
 # Ground-truth test suite used to evaluate generated code
@@ -96,7 +113,25 @@ def your_build_reflexion_context(prev_code: str, failures: List[str]) -> str:
 
     Return a string that will be sent as the user content alongside the reflexion system prompt.
     """
-    return ""
+    failure_report = "\n".join(f"- {failure}" for failure in failures)
+    return f"""Review the previous implementation and correct it based on the test failures.
+
+Previous implementation:
+```python
+{prev_code}
+```
+
+Test failures:
+{failure_report}
+
+The required password rules are:
+- at least 8 characters
+- at least one lowercase letter
+- at least one uppercase letter
+- at least one digit
+- at least one character from !@#$%^&*()-_
+- no whitespace
+"""
 
 
 def apply_reflexion(
