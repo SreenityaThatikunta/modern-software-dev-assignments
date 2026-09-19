@@ -3,10 +3,10 @@ from __future__ import annotations
 import os
 import re
 from typing import List
-import json
-from typing import Any
-from ollama import chat
+
 from dotenv import load_dotenv
+from ollama import chat
+from pydantic import BaseModel
 
 load_dotenv()
 
@@ -16,6 +16,21 @@ KEYWORD_PREFIXES = (
     "action:",
     "next:",
 )
+
+
+class LLMActionItems(BaseModel):
+    """The structured response requested from the Ollama model."""
+
+    items: List[str]
+
+
+# Keep this schema intentionally small: it is easier for compact local models
+# such as llama3.2:3b to follow than a schema with generated metadata.
+ACTION_ITEMS_SCHEMA = {
+    "type": "object",
+    "properties": {"items": {"type": "array", "items": {"type": "string"}}},
+    "required": ["items"],
+}
 
 
 def _is_action_line(line: str) -> bool:
@@ -63,6 +78,49 @@ def extract_action_items(text: str) -> List[str]:
             continue
         seen.add(lowered)
         unique.append(item)
+    return unique
+
+
+def extract_action_items_llm(text: str) -> List[str]:
+    """Extract action items from notes with a locally running Ollama model.
+
+    Set ``OLLAMA_MODEL`` to the name of a model already pulled with Ollama. The
+    default, ``llama3.2:3b``, is a small general-purpose model suitable for local use.
+    """
+    notes = text.strip()
+    if not notes:
+        return []
+
+    response = chat(
+        model=os.getenv("OLLAMA_MODEL", "llama3.2:3b"),
+        messages=[
+            {
+                "role": "user",
+                "content": (
+                    "Extract every action item as a short string. Return JSON only.\n"
+                    f"{notes}"
+                ),
+            }
+        ],
+        format=ACTION_ITEMS_SCHEMA,
+        options={"temperature": 0},
+    )
+    parsed = LLMActionItems.model_validate_json(response.message.content)
+
+    # Keep the service contract consistent with the heuristic extractor.
+    return _deduplicate_items(parsed.items)
+
+
+def _deduplicate_items(items: List[str]) -> List[str]:
+    """Drop blank and duplicate items while preserving the model's ordering."""
+    seen: set[str] = set()
+    unique: List[str] = []
+    for item in items:
+        cleaned = item.strip()
+        if not cleaned or cleaned.lower() in seen:
+            continue
+        seen.add(cleaned.lower())
+        unique.append(cleaned)
     return unique
 
 
