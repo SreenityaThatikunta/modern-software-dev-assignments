@@ -43,13 +43,23 @@ Built a local Model Context Protocol server for turning development activity int
 
 See [Week 3](./week3/).
 
-### Weeks 4–8 — Upcoming Work
+### Week 4 — Coding-Agent Automations
+
+Built a venv-based FastAPI workflow with reusable coding-agent automations:
+
+- `/week4-quality` to format, lint, and test a focused change
+- `/week4-api-sync` to prevent API-documentation drift
+- Full note search, edit, delete, validation, tag extraction, and browser controls
+- API reference, pre-commit hook, and regression tests
+
+See [Week 4](./week4/).
+
+### Weeks 5–8 — Upcoming Work
 
 The repository includes the assignment materials and starter projects for later weeks. These assignments are not yet documented as completed:
 
 | Week | Focus |
 | --- | --- |
-| 4 | Coding-agent automations |
 | 5 | Modern terminal and multi-agent workflows |
 | 6 | AI testing and security |
 | 7 | Software support, reviews, and API improvements |

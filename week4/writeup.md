@@ -1,70 +1,77 @@
-# Week 4 Write-up
-Tip: To preview this markdown file
-- On Mac, press `Command (⌘) + Shift + V`
-- On Windows/Linux, press `Ctrl + Shift + V`
+# Week 4 Write-up — The Autonomous Coding Agent IRL
 
-## INSTRUCTIONS
+## Submission details
 
-Fill out all of the `TODO`s in this file.
+Name: **TODO — add before submitting**
 
-## SUBMISSION DETAILS
+SUNet ID: **TODO — add before submitting**
 
-Name: **TODO** \
-SUNet ID: **TODO** \
-Citations: **TODO**
+Citations: [Claude Code best practices](https://www.anthropic.com/engineering/claude-code-best-practices) and [Claude Code sub-agents overview](https://docs.anthropic.com/en/docs/claude-code/sub-agents).
 
-This assignment took me about **TODO** hours to do. 
+This assignment took me about **TODO — record your time before submitting** hours to do.
 
+## Automation #1 — `/week4-quality`
 
-## YOUR RESPONSES
-### Automation #1
-a. Design inspiration (e.g. cite the best-practices and/or sub-agents docs)
-> TODO
+### Design inspiration
 
-b. Design of each automation, including goals, inputs/outputs, steps
-> TODO
+The automation follows the small, repeatable feedback-loop approach recommended in the
+Claude Code best-practices guide. It makes the project’s formatter, linter, and tests
+one predictable quality gate rather than a sequence that has to be recalled manually.
 
-c. How to run it (exact commands), expected outputs, and rollback/safety notes
-> TODO
+### Design, operation, and safety
 
-d. Before vs. after (i.e. manual workflow vs. automated workflow)
-> TODO
+The custom slash command is `.claude/commands/week4-quality.md`. It accepts an
+optional pytest path or expression through `$ARGUMENTS`, runs Black, Ruff, and the
+relevant tests, then reports commands, passing tests, formatter changes, and the first
+failure. Run `/week4-quality` from the repository root (for example,
+`/week4-quality backend/tests/test_notes.py`) after creating the environment once:
 
-e. How you used the automation to enhance the starter application
-> TODO
+```bash
+cd week4
+make setup
+```
 
+It uses only `.venv`, never Conda. Formatting is the only intentional file mutation;
+changes remain visible in `git diff`. The command stops on its first failure and never
+deletes data or modifies other weeks.
 
-### Automation #2
-a. Design inspiration (e.g. cite the best-practices and/or sub-agents docs)
-> TODO
+### Before, after, and application use
 
-b. Design of each automation, including goals, inputs/outputs, steps
-> TODO
+Before, a developer had to remember virtual-environment activation, formatting,
+linting, and testing. After, one focused command invokes all three checks through
+`.venv/bin/python`. I used it while adding case-insensitive note search, full note
+replacement/deletion, request validation, and tag extraction tests.
 
-c. How to run it (exact commands), expected outputs, and rollback/safety notes
-> TODO
+## Automation #2 — `/week4-api-sync`
 
-d. Before vs. after (i.e. manual workflow vs. automated workflow)
-> TODO
+### Design inspiration
 
-e. How you used the automation to enhance the starter application
-> TODO
+The sub-agents overview recommends narrow, well-defined responsibilities. This
+documentation-review automation compares routes, schemas, and tests against one API
+reference instead of relying on a general coding session to remember documentation
+drift.
 
+### Design, operation, and safety
 
-### *(Optional) Automation #3*
-*If you choose to build additional automations, feel free to detail them here!*
+The command is `.claude/commands/week4-api-sync.md`. It accepts an optional route or
+feature, reads the FastAPI source and tests, compares them with `week4/docs/API.md`,
+updates documented drift only, and then runs test and lint targets. From the repository
+root, run `/week4-api-sync` or `/week4-api-sync notes search`. It expects the
+environment produced by `cd week4 && make setup`.
 
-a. Design inspiration (e.g. cite the best-practices and/or sub-agents docs)
-> TODO
+Expected output is either no drift or a route-delta summary followed by passing checks.
+It does not invent routes, start a persistent server, alter the database, or use Conda.
+The only possible changes are reviewable documentation edits.
 
-b. Design of each automation, including goals, inputs/outputs, steps
-> TODO
+### Before, after, and application use
 
-c. How to run it (exact commands), expected outputs, and rollback/safety notes
-> TODO
+Before, the app had no API reference and route changes could leave users with stale
+instructions. After, `docs/API.md` documents all Week 4 endpoints, payload limits, and
+`404`/`422` behavior. I used it after adding `PUT /notes/{id}`, `DELETE /notes/{id}`,
+and canonical `GET /notes/search?q=...`.
 
-d. Before vs. after (i.e. manual workflow vs. automated workflow)
-> TODO
+## Additional repository guidance
 
-e. How you used the automation to enhance the starter application
-> TODO
+`CLAUDE.md` records Week 4 entry points, the `venv` commands, SQLAlchemy safety rules,
+test order, and the API documentation gate, giving future agent sessions the same
+project-specific context.
