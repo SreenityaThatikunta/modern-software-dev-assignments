@@ -4,13 +4,38 @@ async function fetchJSON(url, options) {
   return res.json();
 }
 
-async function loadNotes() {
+async function loadNotes(query = '') {
   const list = document.getElementById('notes');
   list.innerHTML = '';
-  const notes = await fetchJSON('/notes/');
+  const url = query ? `/notes/search?q=${encodeURIComponent(query)}` : '/notes/';
+  const notes = await fetchJSON(url);
   for (const n of notes) {
     const li = document.createElement('li');
-    li.textContent = `${n.title}: ${n.content}`;
+    const label = document.createElement('span');
+    label.textContent = `${n.title}: ${n.content} `;
+    li.appendChild(label);
+    const edit = document.createElement('button');
+    edit.textContent = 'Edit';
+    edit.onclick = async () => {
+      const title = window.prompt('Title', n.title);
+      const content = window.prompt('Content', n.content);
+      if (title === null || content === null) return;
+      await fetchJSON(`/notes/${n.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, content }),
+      });
+      loadNotes(document.getElementById('note-search').value);
+    };
+    li.appendChild(edit);
+    const remove = document.createElement('button');
+    remove.textContent = 'Delete';
+    remove.onclick = async () => {
+      if (!window.confirm(`Delete "${n.title}"?`)) return;
+      await fetch(`/notes/${n.id}`, { method: 'DELETE' });
+      loadNotes(document.getElementById('note-search').value);
+    };
+    li.appendChild(remove);
     list.appendChild(li);
   }
 }
@@ -59,6 +84,10 @@ window.addEventListener('DOMContentLoaded', () => {
     });
     e.target.reset();
     loadActions();
+  });
+
+  document.getElementById('note-search').addEventListener('input', (e) => {
+    loadNotes(e.target.value);
   });
 
   loadNotes();

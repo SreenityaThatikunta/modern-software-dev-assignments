@@ -14,3 +14,9 @@ def test_create_and_complete_action_item(client):
     assert r.status_code == 200
     items = r.json()
     assert len(items) == 1
+
+
+def test_action_item_validation_and_missing_item_errors(client):
+    response = client.post("/action-items/", json={"description": ""})
+    assert response.status_code == 422
+    assert client.put("/action-items/999/complete").status_code == 404
